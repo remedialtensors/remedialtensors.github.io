@@ -1,9 +1,6 @@
 name: tbgs
 description: musings of three bored graduate students
 meta_description: ""
-
-markdown: redcarpet
-highlighter: rouge
 logo: false
 paginate: 15
 domain_name: 'http://threeboredgraduatestudents.github.io/'
