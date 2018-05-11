@@ -6,8 +6,7 @@ markdown: redcarpet
 highlighter: rouge
 logo: false
 paginate: 15
-baseurl: /blog
-domain_name: 'http://vaishaal.com'
+domain_name: 'http://tbgs.github.io'
 google_analytics: 'UA-XXXXXXXX-X'
 
 # Gems
