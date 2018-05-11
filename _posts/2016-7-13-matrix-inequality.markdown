@@ -5,6 +5,8 @@ date: 2016-07-20
 visible: 0
 categories: ml
 comments: true
+author: "vaishaal"
+author_full_name: "Vaishaal Shankar"
 ---
 
 In this post I will walk through a concrete application of [a matrix equality](http://people.eecs.berkeley.edu/~stephentu/blog/matrix-analysis/2016/06/03/matrix-inverse-equality.html) to speed up the training process of a simple image classification pipeline.

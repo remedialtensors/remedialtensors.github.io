@@ -44,9 +44,9 @@ about: 'about.html'
             {{ post.excerpt }} <a class="read-more" href="{{ site.baseurl }}{{ post.url }}">&raquo;</a>
         </section>
         <footer class="post-meta">
-            {% if site.author %}
-                <img class="author-thumb" src="assets/images/profile.jpg" alt="Author's profile picture" nopin="nopin" />
-                {{ site.author }}
+            {% if post.author %}
+            <img class="author-thumb" src="assets/images/{{ post.author }}.jpg" alt="Author's profile picture" nopin="nopin" />
+                {{ post.author_full_name }}
             {% endif %}
             {% if post.categories.size > 0 %} 
                 {{ post.categories | array_to_sentence_string | prepend: 'on ' }} 
@@ -58,6 +58,5 @@ about: 'about.html'
     </article>
     {% endif %}
     {% endfor %}
-
     {% include pagination.html %}
 </main>
