@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    <title>tbgs - musings of three bored graduate students</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+        });
+    </script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    <link rel="stylesheet" type="text/css" href="/blog/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Merriweather:300,700,700italic,300italic|Open+Sans:700,400" />
+    <!-- Customisation  -->
+    <link rel="stylesheet" type="text/css" href="/blog/assets/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="/blog/assets/css/theorem.css" />
+
+</head>
+<body class="home-template">
+
+    <header class="main-header post-head no-cover">
+    <nav class="main-nav  clearfix">
+        <a class="back-button icon-arrow-left" href="/blog">Home</a>
+        <a class="subscribe-button icon-feed" href="/blogrss.xml">Subscribe</a>
+    </nav>
+</header>
+
+<main class="content" role="main">
+
+    <article class="post">
+
+        <header class="post-header">
+            <h1 class="post-title">Using a matrix equality for (small-scale) image classification</h1>
+            <section class="post-meta">                
+                <time class="post-date" datetime="2016-07-20">20 Jul 2016</time>
+                 
+                    on ml 
+                
+            </section>
+        </header>
+
+<!--         <header class="post-header">
+            <a id="blog-logo" href="http://localhost:4000">
+                
+                    <span class="blog-title">tbgs</span>
+                 
+            </a>
+        </header> -->
+        
+        <!-- <span class="post-meta">
+            <time datetime="2016-07-20">20 Jul 2016</time>
+             
+                on ml 
+            
+        </span> -->
+
+        <!-- <h1 class="post-title">Using a matrix equality for (small-scale) image classification</h1> -->
+
+        <section class="post-content">
+            <p>In this post I will walk through a concrete application of <a href="http://people.eecs.berkeley.edu/~stephentu/blog/matrix-analysis/2016/06/03/matrix-inverse-equality.html">a matrix equality</a> to speed up the training process of a simple image classification pipeline.</p>
+
+<h4 id="background">Background</h4>
+<p>I have a relatively small collection of blurry images (32 x 32 rgb pixels) from the cifar data set (50,000 images) from each of 10 classes. The task is to build a
+model to classify these images.</p>
+
+<p>For reference, the images look like this:</p>
+<p>
+<img src="/blog/assets/images/cifar_frog.png" width="256" id="cifar_frog" />
+</p>
+
+<h4 id="problem-formulation">Problem Formulation</h4>
+<p>We can represent each image as a vector in $\mathrm{R}^{32 \times 32 \times 3}$ (a 3072 dimensional vector).
+Then we stack all these images into a $50000 \times 3072$ matrix and call it $X$</p>
+
+<p>We can let Y be a $50000 \times 10$ matrix of corresponding <a href="http://stackoverflow.com/questions/17469835/one-hot-encoding-for-machine-learning">one hot encoded</a> image labels.</p>
+
+<p>We denote $X_{i}$ to be the $ith$ row of $X$ (or the $ith$ image)</p>
+
+<p>We denote $Y_{i}$ to be the $ith$ row of $Y$ (or the $ith$ image label)</p>
+
+<p>
+Now the task is to build a <i>generalizable</i> map from $X_i \to Y_i$
+</p>
+
+<h4 id="strawman">Strawman</h4>
+
+<p>What is the simplest map we can think of?</p>
+
+<p>LINEAR!</p>
+
+<p>That is we want to find a matrix $W$ such that $xW$ is close to $y$, the label vector.</p>
+
+<p>Particularly we want the maximal index of $xW$ to be the same as the maximal index
+of $y$.</p>
+
+<p>Another way to state this is that we want $||xW - y||_{2}^{2}$ to be small.</p>
+
+<p>We can formulate an optimization problem.</p>
+
+<p>
+So lets try to minimize
+$\frac{1}{2} \|XW - Y\|_{F}^{2} + \lambda \|W\|^{2}_{F}$
+</p>
+
+<p>Note I added a <em>penalty</em> term, this is very common.
+In the derivation of the solution it will be clear why the penalty
+term is necessary. Note the $_F$ simply means I will be using the <a href="https://en.wikipedia.org/wiki/Matrix_norm#Frobenius_norm">Frobenius norm</a>,
+which means I’ll treat the matrices XW and Y as large vectors and use the standard euclidean
+norm.</p>
+
+<p>Note:
+$||X||_{F}^{2} = \mathrm{Tr}(X^{T}X)$</p>
+
+<p>Where $\mathrm{Tr}$ is the trace.</p>
+
+<h4 id="strawman-solution">Strawman solution</h4>
+<p>We can find the optimum solution with some matrix calculus:</p>
+
+<p>First expand</p>
+
+<p>$ \mathrm{Tr}(W^{T}X^{T}XW) - \mathrm{Tr}(X^{T}WY) + \mathrm{Tr}(Y^{T}Y)  + \lambda \mathrm{Tr}(W^{T}W)$</p>
+
+<p>Note I converted the Frobenius norm to a trace</p>
+
+<p>Then take derivative and set to 0.</p>
+
+<p>Note trace and derivative commute</p>
+
+<p>$ \mathrm{Tr}(X^{T}XW) - \mathrm{Tr}(X^{T}Y) + \lambda I_{d} \mathrm{Tr}(W) = 0$</p>
+
+<p>$ \mathrm{Tr}(X^{T}XW) +  \lambda \mathrm{Tr}(W) = \mathrm{Tr}(X^{T}Y)$</p>
+
+<p>Linearity of \mathrm{Tr}ace</p>
+
+<p>$ \mathrm{Tr}((X^{T}X +  I_{d}\lambda) W) = \mathrm{Tr}(X^{T}Y)$</p>
+
+<p>This is satisfied when:</p>
+
+<p>$W =  (X^{T}X +  I_{d}\lambda)^{-1}X^{T}Y$</p>
+
+<p>Which would be our optimum. Since $d$ in this case is only $3072$ this is a quick and easy computation. Note the penalty term makes our matrix invertible when $X^{T}X$
+is singular.
+that can be done in one line of python.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt;&gt;&gt; d = X.shape[1]
+&gt;&gt;&gt; W = scipy.linalg.solve(X.dot(X) + lambdav*np.eye(d), X.T.dot(Y))
+&gt;&gt;&gt; predictedTestLabels = argmax(Xtest.dot(W), axis=1)
+</code></pre></div></div>
+<p>####How did it do?</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt;&gt;&gt; (predictedTestLabels == labels)/float(len(labels))
+0.373
+</code></pre></div></div>
+
+<p>…Ouch</p>
+
+<p>####Strawman++</p>
+
+<p>Unfortunately the raw space  these image-vectors live in isn’t very good for
+linear classification, so our model will perform poorly. So lets “lift” our data
+to a “better” space.</p>
+
+<p>Let $\Phi$ be a featurization function, that will “lift” our data. I’ve
+heard neural networks work well for this task, so I’ll let $\Phi$ be a convolutional neural net (cnn)</p>
+
+<p>I’m lazy so I don’t have time to add a lot of layers, so it’ll be a one layer CNN.</p>
+
+<p>Furthermore I’m really lazy so I’m not going to train the network.  So $\Phi$ is a
+<em>random</em>, <em>single layer</em> convolutional neural network.</p>
+
+<p>
+Specifically I used a network with $6 x 6$ patches, $1024$ filters, a RELU nonlinearity and a average pooler to $2 x 2$.
+This will make the output dimension $4096$
+</p>
+
+<h4 id="how-did-it-do">How did it do?</h4>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt;&gt;&gt; A = phi(X, seed=0)
+&gt;&gt;&gt; d = A.shape[1]
+&gt;&gt;&gt; lambdav = 0.1
+&gt;&gt;&gt; W = scipy.linalg.solve(A.T.dot(A) + lambdav*np.eye(d), A.T.dot(Y))
+&gt;&gt;&gt; predictedTestLabels = argmax(phi(Xtest, seed=0).dot(W), axis=1)
+&gt;&gt;&gt; (predictedTestLabels == labels)/float(len(labels))
+0.64
+</code></pre></div></div>
+
+<p>Holy smokes batman!</p>
+
+<p>thats a big jump. But we can do better.</p>
+
+<p>####Tinman
+Since our $\Phi$ is just a random map, what if we “lift” X
+multiple times (independently) and concatenate those representations,
+since each one is independent and random.</p>
+
+<p>Let $\Phi_{k}$ be this concatenation map</p>
+
+<p>That is:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt;&gt;&gt; k = 25
+&gt;&gt;&gt; def phik(X):
+        return np.hstack(map(lambdav i: phi(X, seed=i), range(k)))
+</code></pre></div></div>
+
+<p>We can let $A = \Phi_{k}(X)$, note A is now $50000 \times 4096k$</p>
+
+<p>
+Remember we want to minimize $\frac{1}{2}\|AW - Y\|_{F}^{2} + \lambda\|W\|_{F}^{2}$
+</p>
+
+<p>Our previous calculus tells us $W^{*} = (A^{T}A + \lambda I_{4096k})^{-1}A^{T}Y$</p>
+
+<p>And our prediction vector would be $\hat{Y} = A(A^{T}A + \lambda I_{d})^{-1}A^{T}Y$</p>
+
+<p>Even for moderate values of k (perhaps over $25$), $(AA^{T} + \lambda I_{d})^{-1}$ becomes very hard to compute (since the inverse scales as $d^{3}$).</p>
+
+<p>We can finally use the <a href="https://people.eecs.berkeley.edu/~stephentu/blog/matrix-analysis/2016/06/03/matrix-inverse-equality.html">useful matrix equality</a>
+to rewrite the prediction vector</p>
+
+<p>$\hat{Y} = AA^{T}(AA^{T} + \lambda I_{50000})^{-1}Y$</p>
+
+<p>Thus our new linear model looks like:</p>
+
+<p>$W = A^{T}(AA^{T} + \lambda I_{50000})^{-1}Y$</p>
+
+<p>Now we never have to invert anything greater than $50000 \times 50000$ !</p>
+
+<p>I’m going to try $k=25$</p>
+
+<p>####How did it do?</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&gt;&gt;&gt; A = phik(X)
+&gt;&gt;&gt; W = A.t.dot(scipy.linalg.solve(A.dot(A.t) + lambdav * np.eye(n), Y, sym_pos=True))
+&gt;&gt;&gt; predictedTestLabels= np.argmax(phik(Xtest).dot(C), axis=1)
+&gt;&gt;&gt; (predictedTestLabels == labels)/float(len(labels))
+0.75
+</code></pre></div></div>
+
+<p>yay!</p>
+
+<h4 id="you-skipped-some-steps">You skipped some steps!</h4>
+
+<p>There are a couple key details I left out of this post. Both are issues around
+making the above method practical (even on small datasets like CIFAR-10).</p>
+
+<p>One is the actual efficient computation of $\Phi$, this step can
+be easily parallelized or sped up using vector operations (or both).</p>
+
+<p>The actual observed behavior is that the test accuracy climbs as the number of
+random features are accumulated, so we want to push $k$ as large as possible.
+But we also want to avoid memory problems when $n \times d$ gets too large.
+So we want to avoid materializing X.</p>
+
+
+        </section>
+            
+            <div id="disqus_thread"></div>
+            <script>
+                /**
+                *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+                *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+                */
+                /*
+                var disqus_config = function () {
+                    this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+                    this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+                };
+                */
+                (function() {  // DON'T EDIT BELOW THIS LINE
+                    var d = document, s = d.createElement('script');
+
+                    s.src = '//vaishaalcomblog.disqus.com/embed.js';
+
+                    s.setAttribute('data-timestamp', +new Date());
+                    (d.head || d.body).appendChild(s);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+            
+
+        
+
+
+        <footer class="post-footer">
+            <!-- If we want to display author's name and bio -->
+            
+                <figure class="author-image">
+                    <a class="img" href="/blog" style="background-image: url('http://vaishaal.com/blog/assets/images/profile.jpg')">
+                    <span class="hidden">Vaishaal Shankar's Picture</span></a>
+                </figure>
+            
+
+        </footer>
+
+    </article>
+
+</main>
+
+    <footer class="site-footer clearfix">
+      <section class="copyright">
+        <a href="/blog">tbgs</a> &copy; 
+               &bull; All rights reserved.
+      </section>
+      <section class="poweredby">Made with Jekyll using 
+        <a href="http://github.com/rosario/kasper">Kasper theme</a>
+      </section>
+    </footer>
+    
+    <script type="text/javascript" src="/blog/assets/js/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="/blog/assets/js/jquery.fitvids.js"></script>
+    <script type="text/javascript" src="/blog/assets/js/index.js"></script>
+
+    <!-- Google Analytics Tracking code -->
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-XXXXXXXX-X']);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>   
+</body>
+</html>

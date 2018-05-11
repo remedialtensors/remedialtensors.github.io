@@ -1,0 +1,19 @@
+name: tbgs
+description: musings of three bored graduate students
+meta_description: ""
+
+markdown: redcarpet
+highlighter: rouge
+logo: false
+paginate: 15
+baseurl: /blog
+domain_name: 'http://vaishaal.com'
+google_analytics: 'UA-XXXXXXXX-X'
+
+# Gems
+plugins: [jekyll-paginate]
+
+# Details for the RSS feed generator
+url:            'vaishaal.com/blog'
+author:         'Vaishaal Shankar'
+
