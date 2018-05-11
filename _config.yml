@@ -6,13 +6,9 @@ markdown: redcarpet
 highlighter: rouge
 logo: false
 paginate: 15
-domain_name: 'http://tbgs.github.io'
+domain_name: 'http://threeboredgraduatestudents.github.io/'
 google_analytics: 'UA-XXXXXXXX-X'
 
 # Gems
 plugins: [jekyll-paginate]
-
-# Details for the RSS feed generator
-url:            'vaishaal.com/blog'
-author:         'Vaishaal Shankar'
 
