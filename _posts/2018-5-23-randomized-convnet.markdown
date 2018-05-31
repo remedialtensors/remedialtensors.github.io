@@ -1,10 +1,10 @@
 ---
 layout: post
 title: "Randomizing the layers of a convolutional neural network"
-date: 2016-07-20
+date: 2018-06-04
 visible: 0
 categories: ml
-author: Vaishaal Shankar and Achal Dave
+author: Achal Dave
 comments: true
 ---
 
