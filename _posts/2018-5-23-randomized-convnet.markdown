@@ -4,7 +4,8 @@ title: "Randomizing the layers of a convolutional neural network"
 date: 2018-06-04
 visible: 0
 categories: ml
-author: Achal Dave
+author: "achalvaishaal"
+author_full_name: "Achal Dave and Vaishaal Shankar"
 comments: true
 ---
 
